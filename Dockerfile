@@ -21,3 +21,4 @@ RUN pip install --no-cache-dir psutil gputil
 
 # Run system_monitor.py when the container launches
 CMD ["python", "./app.py"]
+    
