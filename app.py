@@ -27,10 +27,17 @@ def usage():
     cpu_usage = psutil.cpu_percent(1)
     gpu_usage = get_gpu_usage()
     memory_usage = psutil.virtual_memory()
+    disk_usage = psutil.disk_usage('/')
+    network_usage = psutil.net_io_counters()
+    temp = psutil.sensors_temperatures()
     return {
         "CPU Usage": f"{cpu_usage}%",
         "GPU Usage": gpu_usage,
-        "Memory Usage": f"{memory_usage.percent}%"
+        "Memory Usage": f"{memory_usage.percent}%",
+        "Disk Usage": f"{disk_usage.percent}%",
+        "Network Usage": f"{network_usage.bytes_sent} bytes sent, {network_usage.bytes_recv} bytes received",
+        "Temperature": f"{temp['coretemp'][0].current}°C"
+
     }
 
 if __name__ == "__main__":
