@@ -1,6 +1,8 @@
+from flask import Flask
 import psutil
-import time
 import GPUtil
+
+app = Flask(__name__)
 
 def get_gpu_usage():
     """Returns the GPU usage if NVIDIA GPU is present, else 'Not NVIDIA'."""
@@ -9,16 +11,26 @@ def get_gpu_usage():
         return "Not NVIDIA"
     return f"GPU Usage: {gpus[0].load * 100}%"
 
-def print_cpu_and_gpu_usage(interval=1):
-    """Prints the CPU and GPU usage of the machine every 'interval' seconds."""
-    try:
-        while True:
-            cpu_usage = psutil.cpu_percent(interval)
-            gpu_usage = get_gpu_usage()
-            print(f"CPU Usage: {cpu_usage}%")
-            print(gpu_usage)
-    except KeyboardInterrupt:
-        print("Program terminated.")
+@app.route('/')
+def home():
+    """Endpoint to check if the server is up."""
+    return "Home"
+
+@app.route('/health')
+def health():
+    """Endpoint to check if the server is up."""
+    return "OK"
+
+@app.route('/usage')
+def usage():
+    """Endpoint to get current CPU and GPU usage."""
+    cpu_usage = psutil.cpu_percent(1)
+    gpu_usage = get_gpu_usage()
+    return {
+        "CPU Usage": f"{cpu_usage}%",
+        "GPU Usage": gpu_usage
+    }
 
 if __name__ == "__main__":
-    print_cpu_and_gpu_usage()
+    app.run(host='0.0.0.0', port=5000, debug=False)
+
