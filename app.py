@@ -26,9 +26,11 @@ def usage():
     """Endpoint to get current CPU and GPU usage."""
     cpu_usage = psutil.cpu_percent(1)
     gpu_usage = get_gpu_usage()
+    memory_usage = psutil.virtual_memory()
     return {
         "CPU Usage": f"{cpu_usage}%",
-        "GPU Usage": gpu_usage
+        "GPU Usage": gpu_usage,
+        "Memory Usage": f"{memory_usage.percent}%"
     }
 
 if __name__ == "__main__":
