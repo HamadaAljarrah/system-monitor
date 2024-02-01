@@ -2,19 +2,26 @@ from flask import Flask
 import psutil
 import GPUtil
 import os
-
+import subprocess
+import re
 
 app = Flask(__name__)
 
-def read_rapl_energy(package="0"):
-    """Read energy consumption data from RAPL for a given package."""
-    rapl_path = f"/sys/class/powercap/intel-rapl:intel-rapl:{package}/energy_uj"
+
+
+def get_nvidia_gpu_power_usage():
+    """Get the current power usage for NVIDIA GPUs using nvidia-smi."""
     try:
-        with open(rapl_path, 'r') as f:
-            energy_uj = f.read().strip()
-        return int(energy_uj)
-    except FileNotFoundError:
-        return "RAPL interface not found or not accessible."
+        nvidia_smi_output = subprocess.run(['nvidia-smi', '--query-gpu=power.draw', '--format=csv,noheader,nounits'], stdout=subprocess.PIPE, text=True)
+        power_usage_str = nvidia_smi_output.stdout.strip()  # Power usage in watts
+        # In systems with multiple GPUs, this will return the power usage of the first one. Adjust accordingly.
+        power_usage = float(power_usage_str.split('\n')[0])  # Convert first GPU's power usage to float
+        return f"{power_usage} W"
+    except Exception as e:
+        return f"Failed to read GPU power usage: {str(e)}"
+
+# Example usage
+
 
 
 
@@ -39,8 +46,7 @@ def health():
 def usage():
     """Endpoint to get current CPU and GPU usage."""
     # Example usage
-    initial_energy = read_rapl_energy()
-    print(f"Initial Energy: {initial_energy} uJ")
+    energy = get_nvidia_gpu_power_usage()
     cpu_usage = psutil.cpu_percent(1)
     gpu_usage = get_gpu_usage()
     memory_usage = psutil.virtual_memory()
@@ -52,7 +58,7 @@ def usage():
         "Memory Usage": f"{memory_usage.percent}%",
         "Disk Usage": f"{disk_usage.used} bytes used, {disk_usage.free} bytes free, total {disk_usage.total} bytes",
         "Network Usage": f"{network_usage.bytes_sent} bytes sent, {network_usage.bytes_recv} bytes received",
-        "Initial Energy": initial_energy,
+        "Energy": energy,
 
     }
 
