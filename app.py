@@ -1,8 +1,22 @@
 from flask import Flask
 import psutil
 import GPUtil
+import os
+
 
 app = Flask(__name__)
+
+def read_rapl_energy(package="0"):
+    """Read energy consumption data from RAPL for a given package."""
+    rapl_path = f"/sys/class/powercap/intel-rapl:intel-rapl:{package}/energy_uj"
+    try:
+        with open(rapl_path, 'r') as f:
+            energy_uj = f.read().strip()
+        return int(energy_uj)
+    except FileNotFoundError:
+        return "RAPL interface not found or not accessible."
+
+
 
 def get_gpu_usage():
     """Returns the GPU usage if NVIDIA GPU is present, else 'Not NVIDIA'."""
@@ -24,19 +38,21 @@ def health():
 @app.route('/usage')
 def usage():
     """Endpoint to get current CPU and GPU usage."""
+    # Example usage
+    initial_energy = read_rapl_energy()
+    print(f"Initial Energy: {initial_energy} uJ")
     cpu_usage = psutil.cpu_percent(1)
     gpu_usage = get_gpu_usage()
     memory_usage = psutil.virtual_memory()
     disk_usage = psutil.disk_usage('/')
     network_usage = psutil.net_io_counters()
-    temp = psutil.sensors_temperatures()
     return {
         "CPU Usage": f"{cpu_usage}%",
         "GPU Usage": gpu_usage,
         "Memory Usage": f"{memory_usage.percent}%",
-        "Disk Usage": f"{disk_usage.percent}%",
+        "Disk Usage": f"{disk_usage.used} bytes used, {disk_usage.free} bytes free, total {disk_usage.total} bytes",
         "Network Usage": f"{network_usage.bytes_sent} bytes sent, {network_usage.bytes_recv} bytes received",
-        "Temperature": f"{temp['coretemp'][0].current}°C"
+        "Initial Energy": initial_energy,
 
     }
 
