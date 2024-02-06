@@ -1,3 +1,5 @@
+#Parameter för kunders user id i syfte att hämta datan från apiet och mappa det till rätt kund med hjälp av kundens user id 
+#Version: 2.0 med gpu enrergy via linux
 from flask import Flask
 import psutil
 import GPUtil
@@ -99,6 +101,18 @@ def usage():
     disk_usage = psutil.disk_usage('/')
     network_usage = psutil.net_io_counters()
 
+    usage = {
+        "CPU Usage": f"{cpu_usage}%",
+        "CPU Energy": f"{cpu_energy}",
+        "GPU Usage": gpu_usage,
+        "GPU Usage2": gpu_usage2,
+        "Memory Usage": f"{memory_usage.percent}%",
+        "Disk Usage": f"{disk_usage.used} bytes used, {disk_usage.free} bytes free, total {disk_usage.total} bytes",
+        "Network Usage": f"{network_usage.bytes_sent} bytes sent, {network_usage.bytes_recv} bytes received",
+        "GPU Energy": gpu_energy,
+    }
+    print(usage)
+
     return {
         "CPU Usage": f"{cpu_usage}%",
         "CPU Energy": f"{cpu_energy}",
@@ -111,5 +125,5 @@ def usage():
     }
 
 if __name__ == "__main__":
+    usage()
     app.run(host='0.0.0.0', port=8080, debug=False)
-
