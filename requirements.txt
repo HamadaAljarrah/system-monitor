@@ -8,4 +8,5 @@ MarkupSafe==2.1.4
 psutil==5.9.8
 Werkzeug==3.0.1
 nvidia-ml-py3
-pymongo==4.0.1
+pymongo[srv]==4.0.1
+schedule==1.1.0
