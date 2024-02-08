@@ -41,7 +41,7 @@ MONGO_CONNECTION_STRING = 'mongodb+srv://paulartin:12345679@cluster0.hjzgptm.mon
 # MongoDB client and collection initialization
 client = pymongo.MongoClient(MONGO_CONNECTION_STRING)
 db = client.get_database()  # Specify your database name
-collection = db.get_collection()  # Specify your collection name
+collection = db.get_collection("monitor-data")  # Specify your collection name
 
 # MongoDB client and collection initialization
 client = pymongo.MongoClient(host=MONGO_HOST, port=MONGO_PORT)
