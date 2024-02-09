@@ -7,6 +7,7 @@ import subprocess
 import pynvml
 import pymongo
 import schedule
+import sched
 import time
 
 
@@ -104,7 +105,8 @@ def get_gpu_usage_linux():
     except Exception as e:
         return f"Failed to read GPU usage: {str(e)}"
 
-def insert_data_to_mongodb():
+def insert_data_to_mongodb(scheduler):
+    scheduler.enter(60, 1, insert_data_to_mongodb, (scheduler,))
     cpu_usage = psutil.cpu_percent(1)
     gpu_usage = get_gpu_usage_linux()
     gpu_energy = get_nvidia_gpu_energy()
@@ -112,7 +114,6 @@ def insert_data_to_mongodb():
     disk_usage = psutil.disk_usage('/').used
     network_usage_sent = psutil.net_io_counters().bytes_sent
     network_usage_recv = psutil.net_io_counters().bytes_recv
-    print("TEst")
     data = {
         "timestamp": time.time(),
         "cpu_usage": cpu_usage,
@@ -179,8 +180,11 @@ def usage():
         "GPU Energy": gpu_energy,
     }
 # Schedule data insertion every 30 seconds
-schedule.every(30).seconds.do(insert_data_to_mongodb)
+#schedule.every(30).seconds.do(insert_data_to_mongodb)
 
+my_scheduler = sched.scheduler(time.time, time.sleep)
+my_scheduler.enter(60, 1, insert_data_to_mongodb, (my_scheduler,))
+my_scheduler.run()
 if __name__ == "__main__":
     usage()
     app.run(host='0.0.0.0', port=8080, debug=False)
