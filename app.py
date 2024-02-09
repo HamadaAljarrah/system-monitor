@@ -179,8 +179,7 @@ def usage():
         "Network Usage": f"{network_usage.bytes_sent} bytes sent, {network_usage.bytes_recv} bytes received",
         "GPU Energy": gpu_energy,
     }
-# Schedule data insertion every 30 seconds
-#schedule.every(30).seconds.do(insert_data_to_mongodb)
+# Schedule data insertion every 60 seconds
 
 my_scheduler = sched.scheduler(time.time, time.sleep)
 my_scheduler.enter(60, 1, insert_data_to_mongodb, (my_scheduler,))
