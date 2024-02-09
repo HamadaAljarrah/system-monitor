@@ -44,7 +44,6 @@ db = client.get_database()  # Specify your database name
 collection = db.get_collection("monitor-data")  # Specify your collection name
 
 # MongoDB client and collection initialization
-client = pymongo.MongoClient(host=MONGO_HOST, port=MONGO_PORT)
 db = client[MONGO_DB]
 collection = db[MONGO_COLLECTION]
 
@@ -113,7 +112,7 @@ def insert_data_to_mongodb():
     disk_usage = psutil.disk_usage('/').used
     network_usage_sent = psutil.net_io_counters().bytes_sent
     network_usage_recv = psutil.net_io_counters().bytes_recv
-
+    print("TEst")
     data = {
         "timestamp": time.time(),
         "cpu_usage": cpu_usage,
@@ -179,7 +178,6 @@ def usage():
         "Network Usage": f"{network_usage.bytes_sent} bytes sent, {network_usage.bytes_recv} bytes received",
         "GPU Energy": gpu_energy,
     }
-
 # Schedule data insertion every 30 seconds
 schedule.every(30).seconds.do(insert_data_to_mongodb)
 
