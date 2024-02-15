@@ -10,3 +10,4 @@ Werkzeug==3.0.1
 nvidia-ml-py3
 pymongo[srv]==4.0.1
 schedule==1.1.0
+kubernetes==29.0.0
