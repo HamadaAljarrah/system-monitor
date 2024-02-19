@@ -9,7 +9,7 @@ import pymongo
 import schedule
 import sched
 import time
-
+import os
 
 app = Flask(__name__)
 
@@ -31,6 +31,7 @@ def gpu_energy():
     gpu_energy = get_nvidia_gpu_energy()
     return {"GPU Energy": gpu_energy}
 
+resource_name = os.environ.get('RESOURCE_NAME')
 
 MONGO_HOST = 'cluster0.hjzgptm.mongodb.net'
 MONGO_PORT = 27017
@@ -116,6 +117,7 @@ def insert_data_to_mongodb(scheduler):
     network_usage_recv = psutil.net_io_counters().bytes_recv
     data = {
         "timestamp": time.time(),
+        "resource_name": resource_name,
         "cpu_usage": cpu_usage,
         "gpu_usage": gpu_usage,
         "gpu_energy": gpu_energy,

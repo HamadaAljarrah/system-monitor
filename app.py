@@ -8,8 +8,8 @@ app = Flask(__name__)
 #config.load_kube_config()
 
 # Create Kubernetes client
-#api_instance = client.CoreV1Api()
-"""
+api_instance = client.CoreV1Api()
+
 def get_namespace_resource_usage(namespace):
     #Get resource usage (CPU and memory) for a given namespace.
     try:
@@ -32,14 +32,13 @@ def get_namespace_resource_usage(namespace):
         }
     except Exception as e:
         return f"Failed to retrieve resource usage: {str(e)}"
-"""
 
 @app.route('/namespace-usage/<namespace>')
 def namespace_usage(namespace):
     """Endpoint to get resource usage (CPU and memory) for a given namespace."""
     print("TEST2")
-    #usage_info = get_namespace_resource_usage(namespace)
-    return "Hello"
+    usage_info = get_namespace_resource_usage(namespace)
+    return usage_info
 
 if __name__ == "__main__":
     print("TEEST1")

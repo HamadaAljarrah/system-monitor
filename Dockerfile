@@ -23,6 +23,7 @@ EXPOSE 8080
 
 # Define environment variable for Flask to run in production
 ENV FLASK_ENV=production
+ENV RESOURCE_NAME=example_resource_name
 
 # Run system_monitor.py when the container launches
 CMD ["python", "./app.py"]
