@@ -1,31 +1,52 @@
 from kubernetes import client, config
-# Load Kubernetes configuration from default location
-kube_config_path = '/root/.kube/config/client.config'
+import json
 
-
-# Load Kubernetes configuration from the specified file
-config.load_incluster_config()
-# Create Kubernetes client
-api_instance = client.CoreV1Api()
-
-"""def print_config_file():
-    config_file_path = "/root/.kube/config/client.config"
+def get_namespace_resource_usage(namespace, api_instance):
+    # Get resource usage (CPU and memory) for a given namespace.
     try:
-        with open(config_file_path, "r") as config_file:
-            config_content = config_file.read()
-            print(config_content)
-    except FileNotFoundError:
-        print(f"Config file not found at: {config_file_path}")"""
+        # Get namespace resource usage
+        namespace_metrics = api_instance.list_namespaced_pod(namespace)
+        
+        cpu_total_usage = 0
+        memory_total_usage = 0
 
-def print_all_namespaces():
+        # Calculate total CPU and memory usage
+        for pod in namespace_metrics.items:
+            for container in pod.spec.containers:
+                cpu_total_usage += container.usage['cpu']
+                memory_total_usage += container.usage['memory']
+        
+        return {
+            "Namespace": namespace,
+            "CPU Usage": cpu_total_usage,
+            "Memory Usage": memory_total_usage
+        }
+    except Exception as e:
+        return f"Failed to retrieve resource usage for namespace {namespace}: {str(e)}"
+
+def print_all_namespaces(api_instance):
     # Get all namespaces in the Kubernetes cluster
     try:
         namespaces = api_instance.list_namespace().items
         for namespace in namespaces:
-            print("TEST:", namespace.metadata.name)
+            namespace_name = namespace.metadata.name
+            print(f"Namespace: {namespace_name}")
+            resource_usage = get_namespace_resource_usage(namespace_name, api_instance)
+            if isinstance(resource_usage, dict):
+                print(json.dumps(resource_usage, indent=4))
+            else:
+                print(resource_usage)
+            print("\n")
     except Exception as e:
         print(f"Failed to retrieve namespaces: {str(e)}")
 
 if __name__ == "__main__":
-    #print_config_file()
-    print_all_namespaces()
+    try:
+        # Load Kubernetes configuration
+        config.load_incluster_config()
+        # Create Kubernetes client
+        api_instance = client.CoreV1Api()
+        # Print resource usage for all namespaces
+        print_all_namespaces(api_instance)
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
