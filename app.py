@@ -13,8 +13,9 @@ def get_namespace_resource_usage(namespace, api_instance):
         # Calculate total CPU and memory usage
         for pod in namespace_metrics.items:
             for container in pod.spec.containers:
-                cpu_total_usage += container.usage['cpu']
-                memory_total_usage += container.usage['memory']
+                if 'usage' in container:
+                    cpu_total_usage += container.usage['cpu'] if 'cpu' in container.usage else 0
+                    memory_total_usage += container.usage['memory'] if 'memory' in container.usage else 0
         
         return {
             "Namespace": namespace,
