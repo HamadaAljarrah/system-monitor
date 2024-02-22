@@ -60,7 +60,7 @@ if __name__ == "__main__":
         # Load Kubernetes configuration
         config.load_incluster_config()
         # Create Kubernetes client
-        api_instance = client.CustomObjectsApi()
+        api_instance = client.CoreV1Api()
         # Print resource usage for all namespaces
         print_all_namespaces(api_instance)
     except Exception as e:
