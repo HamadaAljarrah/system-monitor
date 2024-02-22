@@ -7,6 +7,15 @@ config.load_kube_config(config_file=kube_config_path)
 # Create Kubernetes client
 api_instance = client.CoreV1Api()
 
+def print_config_file():
+    config_file_path = "/root/.kube/config/client.config"
+    try:
+        with open(config_file_path, "r") as config_file:
+            config_content = config_file.read()
+            print(config_content)
+    except FileNotFoundError:
+        print(f"Config file not found at: {config_file_path}")
+
 def print_all_namespaces():
     # Get all namespaces in the Kubernetes cluster
     try:
@@ -17,4 +26,5 @@ def print_all_namespaces():
         print(f"Failed to retrieve namespaces: {str(e)}")
 
 if __name__ == "__main__":
+    print_config_file()
     print_all_namespaces()
