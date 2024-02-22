@@ -1,28 +1,10 @@
 from kubernetes import client, config
 # Load Kubernetes configuration from default location
 kube_config_path = '/root/.kube/config/client.config'
-kube_config = '''apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority-data: DATA+OMITTED
-    server: https://10.1.1.6:16443
-  name: microk8s-cluster
-contexts:
-- context:
-    cluster: microk8s-cluster
-    user: admin
-  name: microk8s
-current-context: microk8s
-kind: Config
-preferences: {}
-users:
-- name: admin
-  user:
-    client-certificate-data: DATA+OMITTED
-    client-key-data: DATA+OMITTED'''
+
 
 # Load Kubernetes configuration from the specified file
-config.load_kube_config(kube_config)
+config.load_incluster_config()
 # Create Kubernetes client
 api_instance = client.CoreV1Api()
 
