@@ -1,7 +1,9 @@
 from kubernetes import client, config
 # Load Kubernetes configuration from default location
-config.load_kube_config()
+kube_config_path = '/root/.kube/config/client.config'
 
+# Load Kubernetes configuration from the specified file
+config.load_kube_config(config_file=kube_config_path)
 # Create Kubernetes client
 api_instance = client.CoreV1Api()
 
