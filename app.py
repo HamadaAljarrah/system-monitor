@@ -18,6 +18,7 @@ def get_namespace_pod_metrics(namespace, api_instance):
     except Exception as e:
         return f"Failed to retrieve pod metrics for namespace {namespace}: {str(e)}"
 
+
 def get_namespace_resource_usage(namespace, api_instance):
     try:
         # Get namespace resource usage
@@ -27,9 +28,10 @@ def get_namespace_resource_usage(namespace, api_instance):
         memory_total_usage = 0
 
         # Calculate total CPU and memory usage
-        for pod_metrics in namespace_metrics.values():
-            cpu_total_usage += float(pod_metrics["CPU Usage"].rstrip("n"))  # Strip "n" from CPU usage
-            memory_total_usage += int(pod_metrics["Memory Usage"].rstrip("Ki"))  # Strip "Ki" from memory usage
+        for metric in namespace_metrics.items:
+            cpu_total_usage += float(metric.containers[0].usage['cpu'].rstrip('n')) if 'cpu' in metric.containers[0].usage else 0
+            memory_total_usage += int(metric.containers[0].usage['memory'].rstrip('Ki')) if 'memory' in metric.containers[0].usage else 0
+
         
         return {
             "Namespace": namespace,
