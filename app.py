@@ -1,28 +1,11 @@
 from kubernetes import client, config
 import json
 
-def get_namespace_pod_metrics(namespace, api_instance):
-    try:
-        # Get pod metrics from the metrics API
-        pod_metrics = api_instance.list_namespaced_pod_metric(namespace).items
-        
-        # Extract resource usage information for each pod
-        pod_metrics_info = {}
-        for pod_metric in pod_metrics:
-            pod_name = pod_metric.metadata.name
-            cpu_usage = pod_metric.containers[0].usage["cpu"]
-            memory_usage = pod_metric.containers[0].usage["memory"]
-            pod_metrics_info[pod_name] = {"CPU Usage": cpu_usage, "Memory Usage": memory_usage}
-        
-        return pod_metrics_info
-    except Exception as e:
-        return f"Failed to retrieve pod metrics for namespace {namespace}: {str(e)}"
-
-
 def get_namespace_resource_usage(namespace, api_instance):
+    # Get resource usage (CPU and memory) for a given namespace.
     try:
         # Get namespace resource usage
-        namespace_metrics = get_namespace_pod_metrics(namespace, api_instance)
+        namespace_metrics = api_instance.list_namespaced_pod_metric(namespace)
         
         cpu_total_usage = 0
         memory_total_usage = 0
@@ -31,7 +14,6 @@ def get_namespace_resource_usage(namespace, api_instance):
         for metric in namespace_metrics.items:
             cpu_total_usage += float(metric.containers[0].usage['cpu'].rstrip('n')) if 'cpu' in metric.containers[0].usage else 0
             memory_total_usage += int(metric.containers[0].usage['memory'].rstrip('Ki')) if 'memory' in metric.containers[0].usage else 0
-
         
         return {
             "Namespace": namespace,
@@ -42,8 +24,8 @@ def get_namespace_resource_usage(namespace, api_instance):
         return f"Failed to retrieve resource usage for namespace {namespace}: {str(e)}"
 
 def print_all_namespaces(api_instance):
+    # Get all namespaces in the Kubernetes cluster
     try:
-        # Get all namespaces in the Kubernetes cluster
         namespaces = api_instance.list_namespace().items
         for namespace in namespaces:
             namespace_name = namespace.metadata.name
