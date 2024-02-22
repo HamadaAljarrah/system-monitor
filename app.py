@@ -16,15 +16,15 @@ def print_config_file():
     except FileNotFoundError:
         print(f"Config file not found at: {config_file_path}")
 
-def print_all_namespaces():
+"""def print_all_namespaces():
     # Get all namespaces in the Kubernetes cluster
     try:
         namespaces = api_instance.list_namespace().items
         for namespace in namespaces:
             print("TEST:", namespace.metadata.name)
     except Exception as e:
-        print(f"Failed to retrieve namespaces: {str(e)}")
+        print(f"Failed to retrieve namespaces: {str(e)}")"""
 
 if __name__ == "__main__":
     print_config_file()
-    print_all_namespaces()
+    #print_all_namespaces()
