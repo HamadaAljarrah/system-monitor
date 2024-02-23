@@ -4,7 +4,8 @@ import json
 # Load Kubernetes configuration
 config.load_incluster_config()
 # Create Kubernetes client
-api_instance = client.MetricsV1Api()
+api_instance = client.CoreV1Api()
+cust = client.CustomObjectsApi()
 
 def print_all_namespaces(api_instance):
     # Get all namespaces in the Kubernetes cluster
@@ -19,18 +20,8 @@ def print_all_namespaces(api_instance):
         print(f"Failed to retrieve namespaces: {str(e)}")
 
 def get_pod_metrics(namespace):
-    pods = api_instance.list_namespaced_pod(namespace)
-    for pod in pods.items:
-        pod_name = pod.metadata.name
-        pod_namespace = pod.metadata.namespace
+    print(cust.list_namespaced_custom_object('metrics.k8s.io', 'v1beta1', namespace, 'pods'))
 
-        # Get pod metrics
-        metrics = api_instance.list_namespaced_pod_metric(namespace=pod_namespace)
-        for item in metrics.items:
-            if item.metadata.name == pod_name:
-                cpu_usage = item.containers[0].usage["cpu"]
-                memory_usage = item.containers[0].usage["memory"]
-                print(f"Pod: {pod_name}, Namespace: {pod_namespace}, CPU Usage: {cpu_usage}, Memory Usage: {memory_usage}")
 
 if __name__ == "__main__":
     try:
