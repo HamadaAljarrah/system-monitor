@@ -1,30 +1,10 @@
 from kubernetes import client, config
 import json
 
-def get_namespace_resource_usage(namespace, api_instance):
-    # Get resource usage (CPU and memory) for a given namespace.
-    try:
-        # Get namespace resource usage
-        namespace_metrics = api_instance.list_namespaced_pod(namespace)
-        
-        cpu_total_usage = 0
-        memory_total_usage = 0
-
-        # Calculate total CPU and memory usage
-        for pod in namespace_metrics.items:
-            pod_metrics = api_instance.read_namespaced_pod_metric(pod.metadata.name, namespace)
-            if pod_metrics and pod_metrics.containers:
-                for metric in pod_metrics.containers:
-                    cpu_total_usage += float(metric.usage['cpu'].rstrip('n')) if 'cpu' in metric.usage else 0
-                    memory_total_usage += int(metric.usage['memory'].rstrip('Ki')) if 'memory' in metric.usage else 0
-        
-        return {
-            "Namespace": namespace,
-            "CPU Usage": cpu_total_usage,
-            "Memory Usage": memory_total_usage
-        }
-    except Exception as e:
-        return f"Failed to retrieve resource usage for namespace {namespace}: {str(e)}"
+# Load Kubernetes configuration
+config.load_incluster_config()
+# Create Kubernetes client
+api_instance = client.MetricsV1Api()
 
 def print_all_namespaces(api_instance):
     # Get all namespaces in the Kubernetes cluster
@@ -33,21 +13,27 @@ def print_all_namespaces(api_instance):
         for namespace in namespaces:
             namespace_name = namespace.metadata.name
             print(f"Namespace: {namespace_name}")
-            resource_usage = get_namespace_resource_usage(namespace_name, api_instance)
-            if isinstance(resource_usage, dict):
-                print(json.dumps(resource_usage, indent=4))
-            else:
-                print(resource_usage)
+            get_pod_metrics(namespace_name)
             print("\n")
     except Exception as e:
         print(f"Failed to retrieve namespaces: {str(e)}")
 
+def get_pod_metrics(namespace):
+    pods = api_instance.list_namespaced_pod(namespace)
+    for pod in pods.items:
+        pod_name = pod.metadata.name
+        pod_namespace = pod.metadata.namespace
+
+        # Get pod metrics
+        metrics = api_instance.list_namespaced_pod_metric(namespace=pod_namespace)
+        for item in metrics.items:
+            if item.metadata.name == pod_name:
+                cpu_usage = item.containers[0].usage["cpu"]
+                memory_usage = item.containers[0].usage["memory"]
+                print(f"Pod: {pod_name}, Namespace: {pod_namespace}, CPU Usage: {cpu_usage}, Memory Usage: {memory_usage}")
+
 if __name__ == "__main__":
     try:
-        # Load Kubernetes configuration
-        config.load_incluster_config()
-        # Create Kubernetes client
-        api_instance = client.MetricsV1Api()
         # Print resource usage for all namespaces
         print_all_namespaces(api_instance)
     except Exception as e:
