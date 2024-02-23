@@ -5,15 +5,18 @@ def get_namespace_resource_usage(namespace, api_instance):
     # Get resource usage (CPU and memory) for a given namespace.
     try:
         # Get namespace resource usage
-        namespace_metrics = api_instance.list_namespaced_pod_metric(namespace)
+        namespace_metrics = api_instance.list_namespaced_pod(namespace)
         
         cpu_total_usage = 0
         memory_total_usage = 0
 
         # Calculate total CPU and memory usage
-        for metric in namespace_metrics.items:
-            cpu_total_usage += float(metric.containers[0].usage['cpu'].rstrip('n')) if 'cpu' in metric.containers[0].usage else 0
-            memory_total_usage += int(metric.containers[0].usage['memory'].rstrip('Ki')) if 'memory' in metric.containers[0].usage else 0
+        for pod in namespace_metrics.items:
+            pod_metrics = api_instance.read_namespaced_pod_metric(pod.metadata.name, namespace)
+            if pod_metrics and pod_metrics.containers:
+                for metric in pod_metrics.containers:
+                    cpu_total_usage += float(metric.usage['cpu'].rstrip('n')) if 'cpu' in metric.usage else 0
+                    memory_total_usage += int(metric.usage['memory'].rstrip('Ki')) if 'memory' in metric.usage else 0
         
         return {
             "Namespace": namespace,
@@ -44,7 +47,7 @@ if __name__ == "__main__":
         # Load Kubernetes configuration
         config.load_incluster_config()
         # Create Kubernetes client
-        api_instance = client.CoreV1Api()
+        api_instance = client.MetricsV1Api()
         # Print resource usage for all namespaces
         print_all_namespaces(api_instance)
     except Exception as e:
