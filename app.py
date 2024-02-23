@@ -20,8 +20,14 @@ def print_all_namespaces(api_instance):
         print(f"Failed to retrieve namespaces: {str(e)}")
 
 def get_pod_metrics(namespace):
-    print(cust.list_namespaced_custom_object('metrics.k8s.io', 'v1beta1', namespace, 'pods'))
-
+    pod_metrics_list = cust.list_namespaced_custom_object('metrics.k8s.io', 'v1beta1', namespace, 'pods')
+    for pod_metrics in pod_metrics_list['items']:
+        pod_name = pod_metrics['metadata']['name']
+        for container in pod_metrics['containers']:
+            container_name = container['name']
+            cpu_usage = container['usage']['cpu']
+            memory_usage = container['usage']['memory']
+            print(f"Pod: {pod_name}, Container: {container_name}, CPU: {cpu_usage}, Memory: {memory_usage}")
 
 if __name__ == "__main__":
     try:
