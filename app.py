@@ -2,7 +2,8 @@ from kubernetes import client, config
 import json
 from datetime import datetime
 import pymongo
-from apscheduler.schedulers.background import BackgroundScheduler
+import time
+import sched
 
 # Ersätt med din MongoDB-anslutningsinformation
 
@@ -14,12 +15,12 @@ MONGO_COLLECTION = 'pod-usage'
 MONGO_CONNECTION_STRING = 'mongodb+srv://paulartin:12345679@cluster0.hjzgptm.mongodb.net/CloudSaver'
 
 # MongoDB client and collection initialization
-client = pymongo.MongoClient(MONGO_CONNECTION_STRING)
-db = client.get_database()  # Specify your database name
+mongo_client = pymongo.MongoClient(MONGO_CONNECTION_STRING)
+db = mongo_client.get_database()  # Specify your database name
 collection = db.get_collection("pod-usage")  # Specify your collection name
 
 # MongoDB client and collection initialization
-db = client[MONGO_DB]
+db = mongo_client[MONGO_DB]
 collection = db[MONGO_COLLECTION]
 # Load Kubernetes configuration
 config.load_incluster_config()
@@ -27,7 +28,8 @@ config.load_incluster_config()
 api_instance = client.CoreV1Api()
 cust = client.CustomObjectsApi()
 
-def print_all_namespaces(api_instance):
+def print_all_namespaces(api_instance, scheduler):
+    scheduler.enter(60, 1, print_all_namespaces, (api_instance, scheduler,))
     # Get all namespaces in the Kubernetes cluster
     try:
         namespaces = api_instance.list_namespace().items
@@ -51,13 +53,15 @@ def get_pod_metrics(namespace):
             container_name = container['name']
             cpu_usage = container['usage']['cpu']
             memory_usage = container['usage']['memory']
-            timestamp = datetime.utcnow()
+            timestamp = time.time()
             data = {
                 "cpu_usage": cpu_usage,
                 "memory_usage": memory_usage,
                 "timestamp": timestamp
             }
-
+            print("Namespace:", namespace)
+            print("Pod:", pod_name)
+            print("Usage:", data) 
             if not existing_data:
                 # Skapa ny lista med första datapunkten
                 collection.insert_one({"pod_name": pod_name, "namespace": namespace, "usage": [data]})
@@ -65,17 +69,8 @@ def get_pod_metrics(namespace):
                 # Uppdatera listan med nya datapunkter
                 collection.update_one({"pod_name": pod_name, "namespace": namespace}, {"$push": {"usage": data}})
 
+my_scheduler = sched.scheduler(time.time, time.sleep)
+my_scheduler.enter(60, 1, print_all_namespaces, (api_instance, my_scheduler,))
+my_scheduler.run()
 if __name__ == "__main__":
-    try:
-        # Initial data collection (optional)
-        #print_all_namespaces(api_instance)
-
-        # Start schemaläggare
-        scheduler = BackgroundScheduler()
-        scheduler.add_job(print_all_namespaces, 'interval', seconds=60)
-        scheduler.start()
-
-        # Huvudprogrammet kan köras här, eller så kan det avslutas
-        # beroende på din arkitektur.
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+    print("start")
