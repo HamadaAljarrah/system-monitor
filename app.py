@@ -4,7 +4,7 @@ from datetime import datetime
 import pymongo
 import time
 import sched
-
+import os
 # Ersätt med din MongoDB-anslutningsinformation
 
 MONGO_HOST = 'cluster0.hjzgptm.mongodb.net'
@@ -22,6 +22,9 @@ collection = db.get_collection("pod-usage")  # Specify your collection name
 # MongoDB client and collection initialization
 db = mongo_client[MONGO_DB]
 collection = db[MONGO_COLLECTION]
+
+resource_name = os.environ.get('RESOURCE_NAME')
+
 # Load Kubernetes configuration
 config.load_incluster_config()
 # Create Kubernetes client
@@ -63,11 +66,20 @@ def get_pod_metrics(namespace):
             print("Pod:", pod_name)
             print("Usage:", data) 
             if not existing_data:
-                # Skapa ny lista med första datapunkten
-                collection.insert_one({"pod_name": pod_name, "namespace": namespace, "usage": [data]})
+                # Skapa ny post med pod_name som initialvärde för custom_name
+                collection.insert_one({"resource_name": resource_name, "pod_name": pod_name, "namespace": namespace, "custom_name": pod_name, "usage": [data]})
             else:
-                # Uppdatera listan med nya datapunkter
-                collection.update_one({"pod_name": pod_name, "namespace": namespace}, {"$push": {"usage": data}})
+                # Kontrollera om custom_name redan är satt
+                custom_name = existing_data.get("custom_name", None)
+                resource_name_col = existing_data.get("resource_name", None)
+                if not custom_name:
+                    # Använd pod_name om custom_name inte är satt
+                    collection.update_one({"pod_name": pod_name}, {"$set": {"custom_name": pod_name}})
+                if not resource_name_col:
+                    # Använd pod_name om custom_name inte är satt
+                    collection.update_one({"pod_name": pod_name}, {"$set": {"resource_name": resource_name}})
+                # Uppdatera befintlig post, lämna custom_name oförändrat
+                collection.update_one({"pod_name": pod_name}, {"namespace": namespace}, {"$push": {"usage": data}})
 
 my_scheduler = sched.scheduler(time.time, time.sleep)
 my_scheduler.enter(60, 1, print_all_namespaces, (api_instance, my_scheduler,))
