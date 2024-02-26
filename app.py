@@ -69,17 +69,7 @@ def get_pod_metrics(namespace):
                 # Skapa ny post med pod_name som initialvärde för custom_name
                 collection.insert_one({"resource_name": resource_name, "pod_name": pod_name, "namespace": namespace, "custom_name": pod_name, "usage": [data]})
             else:
-                # Kontrollera om custom_name redan är satt
-                custom_name = existing_data.get("custom_name", None)
-                resource_name_col = existing_data.get("resource_name", None)
-                if not custom_name:
-                    # Använd pod_name om custom_name inte är satt
-                    collection.update_one({"pod_name": pod_name}, {"$set": {"custom_name": pod_name}})
-                if not resource_name_col:
-                    # Använd pod_name om custom_name inte är satt
-                    collection.update_one({"pod_name": pod_name}, {"$set": {"resource_name": resource_name}})
-                # Uppdatera befintlig post, lämna custom_name oförändrat
-                collection.update_one({"pod_name": pod_name}, {"namespace": namespace}, {"$push": {"usage": data}})
+                collection.update_one({"pod_name": pod_name, "namespace": namespace}, {"$push": {"usage": data}})
 
 my_scheduler = sched.scheduler(time.time, time.sleep)
 my_scheduler.enter(60, 1, print_all_namespaces, (api_instance, my_scheduler,))
