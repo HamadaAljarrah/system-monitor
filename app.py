@@ -49,7 +49,12 @@ def get_pod_metrics(namespace):
     for pod_metrics in pod_metrics_list['items']:
         pod_name = pod_metrics['metadata']['name']
         namespace = pod_metrics['metadata']['namespace']
-        # Kontrollera om dokumentet redan finns
+
+        # Retrieving detailed pod information including node name
+        pod_info = api_instance.read_namespaced_pod_status(pod_name, namespace)
+        node_name = pod_info.status.node_name
+
+        # Checking for existing data
         existing_data = collection.find_one({"pod_name": pod_name, "namespace": namespace})
 
         for container in pod_metrics['containers']:
@@ -57,19 +62,31 @@ def get_pod_metrics(namespace):
             cpu_usage = container['usage']['cpu']
             memory_usage = container['usage']['memory']
             timestamp = time.time()
+
+            # Retrieving node specifications
+            node_info = api_instance.read_node(node_name)
+            available_cpu_cores = node_info.status.allocatable['cpu']
+
+            # Calculating CPU percentage
+            cpu_percentage = (cpu_usage / available_cpu_cores) * 100
+
             data = {
                 "cpu_usage": cpu_usage,
                 "memory_usage": memory_usage,
-                "timestamp": timestamp
+                "timestamp": timestamp,
+                "cpu_percentage": cpu_percentage
             }
+
             print("Namespace:", namespace)
             print("Pod:", pod_name)
-            print("Usage:", data) 
+            print("Usage:", data)
+
             if not existing_data:
-                # Skapa ny post med pod_name som initialvärde för custom_name
+                # Create new document with additional data
                 collection.insert_one({"resource_name": resource_name, "pod_name": pod_name, "namespace": namespace, "custom_name": pod_name, "usage": [data]})
             else:
                 collection.update_one({"pod_name": pod_name, "namespace": namespace}, {"$push": {"usage": data}})
+
 
 my_scheduler = sched.scheduler(time.time, time.sleep)
 my_scheduler.enter(60, 1, print_all_namespaces, (api_instance, my_scheduler,))
