@@ -32,7 +32,7 @@ api_instance = client.CoreV1Api()
 cust = client.CustomObjectsApi()
 
 def print_all_namespaces(api_instance, scheduler):
-    scheduler.enter(60, 1, print_all_namespaces, (api_instance, scheduler,))
+    scheduler.enter(60, 1, print_all_namespaces, (api_instance, scheduler))
     # Get all namespaces in the Kubernetes cluster
     try:
         namespaces = api_instance.list_namespace().items
@@ -46,13 +46,13 @@ def print_all_namespaces(api_instance, scheduler):
 
 def get_pod_metrics(namespace):
     pod_metrics_list = cust.list_namespaced_custom_object('metrics.k8s.io', 'v1beta1', namespace, 'pods')
+    #print(nodes_metrics_list)
     for pod_metrics in pod_metrics_list['items']:
         pod_name = pod_metrics['metadata']['name']
         namespace = pod_metrics['metadata']['namespace']
-
-        # Retrieving detailed pod information including node name
-        pod_info = api_instance.read_namespaced_pod_status(pod_name, namespace)
-        node_name = pod_info.status.node_name
+        pod_info = api_instance.read_namespaced_pod(pod_name, namespace)
+        node_name = pod_info.spec.node_name
+        #print(pod_info)
 
         # Checking for existing data
         existing_data = collection.find_one({"pod_name": pod_name, "namespace": namespace})
@@ -65,16 +65,33 @@ def get_pod_metrics(namespace):
 
             # Retrieving node specifications
             node_info = api_instance.read_node(node_name)
+            #print("\n")
+            #print(node_info)
+            print("PAUL")
+            cpu_usage_str = cpu_usage.rstrip("n")  # Remove trailing "n"
+            try:
+                cpu_usage_int = int(cpu_usage_str)  # Convert to integer using try-except for error handling
+            except ValueError:
+                # Handle potential errors (e.g., invalid format)
+                print(f"Error: Could not convert CPU usage '{cpu_usage_str}' to integer")
+                cpu_usage_int = 0  # Assign a default value or handle the error differently
+
             available_cpu_cores = node_info.status.allocatable['cpu']
-
+            print(available_cpu_cores)
             # Calculating CPU percentage
-            cpu_percentage = (cpu_usage / available_cpu_cores) * 100
+            available_cpu_nanocores = int(available_cpu_cores) * 1_000_000_000
 
+            # Calculating CPU percentage (using nanocores)
+            cpu_percentage = (cpu_usage_int / available_cpu_nanocores) * 100
+            pod_labels = pod_info.metadata.labels if pod_info.metadata.labels else {}
+
+            #print(cpu_percentage)
             data = {
                 "cpu_usage": cpu_usage,
                 "memory_usage": memory_usage,
                 "timestamp": timestamp,
-                "cpu_percentage": cpu_percentage
+                "cpu_percentage": cpu_percentage,
+                "energy_consumption": "10"
             }
 
             print("Namespace:", namespace)
@@ -83,13 +100,13 @@ def get_pod_metrics(namespace):
 
             if not existing_data:
                 # Create new document with additional data
-                collection.insert_one({"resource_name": resource_name, "pod_name": pod_name, "namespace": namespace, "custom_name": pod_name, "usage": [data]})
+                collection.insert_one({"resource_name": resource_name, "pod_name": pod_name, "namespace": namespace, "custom_name": pod_name, "usage": [data], "labels": pod_labels})
             else:
                 collection.update_one({"pod_name": pod_name, "namespace": namespace}, {"$push": {"usage": data}})
 
 
 my_scheduler = sched.scheduler(time.time, time.sleep)
-my_scheduler.enter(60, 1, print_all_namespaces, (api_instance, my_scheduler,))
+my_scheduler.enter(60, 1, print_all_namespaces, (api_instance, my_scheduler))
 my_scheduler.run()
 if __name__ == "__main__":
     print("start")
